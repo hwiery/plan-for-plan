@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Add seed configuration
+// prisma = {
+//   seed = "tsx prisma/seed.ts"
+// }
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String?
+  name      String?
+  avatarUrl String?  @map("avatar_url")
+  planType  String   @default("free") @map("plan_type")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  projects Project[]
+
+  @@map("users")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String?
+  initialIdea String   @map("initial_idea")
+  status      String   @default("draft")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interviewSession InterviewSession?
+  prdDocuments     PRDDocument[]
+
+  @@map("projects")
+}
+
+model InterviewSession {
+  id          String    @id @default(cuid())
+  projectId   String    @unique @map("project_id")
+  questions   Json
+  answers     Json
+  currentStep Int       @default(0) @map("current_step")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("interview_sessions")
+}
+
+model PRDDocument {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  content     Json
+  version     Int      @default(1)
+  generatedAt DateTime @default(now()) @map("generated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("prd_documents")
+}
+
+model ApiUsage {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  endpoint  String
+  tokens    Int
+  cost      Float
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("api_usage")
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  projectId String?  @map("project_id")
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("feedback")
+}
